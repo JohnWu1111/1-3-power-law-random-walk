@@ -3,20 +3,20 @@ clc;
 format long
 tic;
 
-L = 1000;
-dt = 1;
+L = 2000;
+dt = 0.1;
 M = 1;
 T = 0:M*dt:1000;
 nt = length(T);
-num = 1000;
+num = 10000;
 
 k = -pi/2 + 2*pi/L:2*pi/L:pi/2;
 % E_k = -2*cos(k');
 E_k = -2*(2*rand(length(k),1)-1);
 % E_k = ones(L/2,1);
 
-D0 = 3;
-Df = 3;
+D0 = 10;
+Df = 10;
 
 psi0 = D0;
 
@@ -58,9 +58,13 @@ parfor n = 1:num
 
     count = 2;
     t_it = 0;
+    phase = 2*pi*rand;
+
     for i = 2:nt*M
+
         t_it = t_it + dt;
-        psif = Df*randn/sqrt(dt);
+        noise = cos(2*pi*t_it + phase) + cos(sqrt(3)*t_it);
+        psif = Df*noise/sqrt(dt);
 %         psif = Df*randn;
 
         b = 2*m_it*psif;

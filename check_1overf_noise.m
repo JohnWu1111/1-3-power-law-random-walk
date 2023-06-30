@@ -3,12 +3,14 @@ clc;
 format long
 tic;
 
-L = 1000;
-dt = 1;
-M = 1;
-T = 0:M*dt:1000;
+L = 2000;
+dt = 0.001;
+M = 100;
+T_max = 1000;
+T = 0:M*dt:T_max;
 nt = length(T);
-num = 1000;
+nt_real = round(T_max/dt)+1;
+num = 100;
 
 k = -pi/2 + 2*pi/L:2*pi/L:pi/2;
 % E_k = -2*cos(k');
@@ -58,9 +60,20 @@ parfor n = 1:num
 
     count = 2;
     t_it = 0;
-    for i = 2:nt*M
+    
+    noise0 = randn(nt_real,1);
+    noise0_f = fft(noise0);
+    noise0_f_half = noise0_f(2:ceil(nt_real/2));
+    dw = 2*pi/T_max;
+    w_half = pi/dt:dw:pi/dt;
+    noise_f_half = noise0_f_half./w_half';
+    noise_f = [0;noise_f_half; conj(flip(noise_f_half))];
+    noise = ifft(noise_f);
+    noise = noise*sum(abs(noise0_f))/sum(abs(noise_f));
+
+    for i = 2:nt_real
         t_it = t_it + dt;
-        psif = Df*randn/sqrt(dt);
+        psif = Df*noise(i)/sqrt(dt);
 %         psif = Df*randn;
 
         b = 2*m_it*psif;
@@ -92,6 +105,7 @@ m_abs = sqrt(mean(m_collect.^2,2));
 
 fit_x = log(T(floor(nt/3):end));
 fit_y = log(m_abs(floor(nt/3):end));
+fit_result = fit(fit_x',fit_y,'poly1')
 
 % m_mean2 = mean(abs(m),2);
 % fit_y2 = log(m_mean2(floor(nt/3):end));
