@@ -3,22 +3,22 @@ clc;
 format long
 tic;
 
-L = 2000;
-dt = 0.1;
+L = 1000;
+dt = 0.001;
 M = 1;
-T_max = 1000;
+T_max = 100;
 T = 0:M*dt:T_max;
 nt = length(T);
 nt_real = round(T_max/dt)+1;
-num = 1000;
+num = 2;
 
 k = -pi/2 + 2*pi/L:2*pi/L:pi/2;
 E_k = -2*cos(k');
 % E_k = -2*(2*rand(length(k),1)-1);
 % E_k = ones(L/2,1);
 
-D0 = 10;
-Df = 10;
+D0 = 3;
+Df = 3;
 
 psi0 = D0;
 
@@ -48,7 +48,7 @@ end
 m_iGS = m0(end);
 
 m_collect = zeros(nt,num);
-parfor n = 1:num
+for n = 1:num
     m = zeros(nt,1);
     phi1 = phi10;
     phi2 = phi20;
@@ -73,22 +73,15 @@ parfor n = 1:num
 
     for i = 2:nt_real
         t_it = t_it + dt;
-        psif = Df*noise(i)/sqrt(dt);
+        psif = Df*noise(i);
+%         psif = Df*noise(i)/sqrt(dt);
 %         psif = Df*randn;
 
-        b = 2*m_it*psif;
-
-        fact = sqrt(E_k.^2+b^2);
-        ft = fact*dt;
-        ss = sin(ft);
-        ss = ss./fact;
-        cc = cos(ft);
-        Es = E_k.*ss;
-        bs = b*ss;
-        phi1n = (cc-1i*Es).*phi1 +1i*bs.*phi2;
-        phi2 = (cc+1i*Es).*phi2 +1i*bs.*phi1;
-        phi1 = phi1n;
+        [phi1, phi2] = Heun_step(phi1, phi2, m_it, E_k, psif, dt, L);
         m_it = (phi1'*phi2 + phi2'*phi1)/L;
+        norm = sqrt(abs(phi1).^2 + abs(phi2).^2);
+        phi1 = phi1./norm;
+        phi2 = phi2./norm;
 
         if mod(i-1,M) == 0
             m(count) = real(m_it);
@@ -130,3 +123,24 @@ subplot(1,3,3)
 plot(T(floor(nt*0.05):end),log(m_abs(floor(nt*0.05):end)))
 xlabel('t')
 ylabel('m')
+
+
+function [y1, y2] = Heun_step(phi1, phi2, m_it, E_k, psif,dt,L)
+    b = 2*m_it*psif;
+
+    fact1t = E_k.*phi1 + b*phi2;
+    fact2t = -E_k.*phi2 + b*phi1;
+    phi1z = phi1 - 1i*dt*fact1t;
+    phi2z = phi2 - 1i*dt*fact2t;
+    m_it = (phi1z'*phi2z + phi2z'*phi1z)/L;
+
+    b = 2*m_it*psif;
+    fact1 = E_k.*phi1z + b*phi2z;
+    fact2 = -E_k.*phi2z + b*phi1z;
+    y1 = phi1 - 1i*dt*(fact1t + fact1)/2;
+    y2 = phi2 - 1i*dt*(fact2t + fact2)/2;
+
+%     z = x + dt * fact1;
+%     fact2 = f(z, field, Jz);
+%     y = x + dt * (fact1 + fact2) / 2;
+end

@@ -9,7 +9,7 @@ M = 100;
 T_max = 1000;
 T = 0:M*dt:T_max;
 nt = length(T);
-num = 100;
+num = 10;
 pos = 100;
 
 k = -pi/2 + 2*pi/L:2*pi/L:pi/2;
@@ -48,7 +48,7 @@ end
 m_iGS = m0(end);
 
 m_collect = zeros(nt,num);
-parfor n = 1:num
+for n = 1:num
     m = zeros(nt,1);
     phi1 = phi10;
     phi2 = phi20;
